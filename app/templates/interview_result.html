@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Interview Results — {{ session.target_role }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 980px; margin: 0 auto;">
+  <!-- Header Overview -->
+  <div class="card" style="padding: 32px 24px; text-align: center;">
+    <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-success);">
+      Interview Session Completed
+    </span>
+    <h1 style="font-size: 26px; font-weight: 700; color: var(--color-text-primary); margin: 6px 0 12px;">
+      {{ session.target_role }}
+    </h1>
+
+    <div style="margin: 18px auto; display: inline-block; background: #f8fafc; border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 18px 36px;">
+      <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">
+        Overall Rubric Score
+      </div>
+      <div style="font-size: 38px; font-weight: 800; color: var(--color-accent); margin: 4px 0;">
+        {{ report.score_summary.overall_score if report.score_summary.overall_score is not none else "Unavailable — human review needed" }}{% if report.score_summary.overall_score is not none %}<span style="font-size: 20px; color: var(--color-text-muted); font-weight: 500;"> / 100</span>{% endif %}
+      </div>
+      <div style="font-size: 13px; color: var(--color-text-secondary);">
+        {{ report.score_summary.evaluations_available|default(0) }} of {{ report.score_summary.questions_answered }} submitted answers evaluated ({{ report.score_summary.total_questions }} questions in the interview)
+        {% if report.score_summary.score_is_provisional|default(false) %}<strong style="display:block; color:var(--color-warning); margin-top:4px;">Provisional score — retry unavailable evaluations or arrange human review.</strong>{% endif %}
+      </div>
+    </div>
+
+    <!-- 5-Dimension Score Boxes -->
+    <div class="score-pill-row">
+      <div class="score-box">
+        <div class="score-box-num">{{ report.score_summary.technical_mastery if report.score_summary.technical_mastery is not none else "N/A" }}{% if report.score_summary.technical_mastery is not none %} / 5{% endif %}</div>
+        <div class="score-box-label">Technical Correctness</div>
+      </div>
+      <div class="score-box">
+        <div class="score-box-num">{{ report.score_summary.depth_score if report.score_summary.depth_score is not none else "N/A" }}{% if report.score_summary.depth_score is not none %} / 5{% endif %}</div>
+        <div class="score-box-label">Depth & Internals</div>
+      </div>
+      <div class="score-box">
+        <div class="score-box-num">{{ report.score_summary.problem_solving if report.score_summary.problem_solving is not none else "N/A" }}{% if report.score_summary.problem_solving is not none %} / 5{% endif %}</div>
+        <div class="score-box-label">Reasoning & Trade-offs</div>
+      </div>
+      <div class="score-box">
+        <div class="score-box-num">{{ report.score_summary.communication if report.score_summary.communication is not none else "N/A" }}{% if report.score_summary.communication is not none %} / 5{% endif %}</div>
+        <div class="score-box-label">Clarity of Explanation</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+      <a href="{{ url_for('reports.detail', session_id=session._id) }}" class="btn btn-primary">
+        Inspect Complete Explainable Report & Audit Trail
+      </a>
+      <a href="{{ url_for('reports.export_pdf', session_id=session._id) }}" class="btn btn-secondary">
+        Download PDF Report
+      </a>
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+        Return to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Strengths & Improvements -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="color: var(--color-success);">Demonstrated Strengths</div>
+      </div>
+      <ul style="padding-left: 20px; font-size: 13.5px; color: var(--color-text-primary); line-height: 1.7;">
+        {% for s in report.strengths %}
+          <li>{{ s }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="color: var(--color-warning);">Areas for Targeted Growth</div>
+      </div>
+      <ul style="padding-left: 20px; font-size: 13.5px; color: var(--color-text-primary); line-height: 1.7;">
+        {% for imp in report.areas_for_improvement %}
+          <li>{{ imp }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Competency Matrix -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Competency & Skill-Gap Matrix</div>
+      <div class="card-subtitle">Traceable status mapping across role requirements, resume, and interview answers</div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Competency</th>
+            <th>Required Level</th>
+            <th>Coverage Status</th>
+            <th>Evidence Sources</th>
+            <th>Interview Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for comp in report.competency_results %}
+            <tr>
+              <td><strong>{{ comp.competency }}</strong></td>
+              <td style="font-size: 12.5px; color: var(--color-text-secondary);">{{ comp.required_level }}</td>
+              <td>
+                {% if comp.coverage_status == 'Demonstrated in interview' %}
+                  <span style="color: var(--color-success); font-weight: 600;">Demonstrated in interview</span>
+                {% elif comp.coverage_status == 'Partially demonstrated' %}
+                  <span style="color: var(--color-warning); font-weight: 500;">Partially demonstrated</span>
+                {% elif comp.coverage_status == 'Project evidence found' %}
+                  <span style="color: var(--color-accent); font-weight: 500;">Project evidence found</span>
+                {% elif comp.coverage_status == 'Claimed' %}
+                  <span style="color: var(--color-text-muted);">Claimed on resume</span>
+                {% else %}
+                  <span style="color: var(--color-text-muted);">Not yet assessed</span>
+                {% endif %}
+              </td>
+              <td style="font-size: 12px; color: var(--color-text-secondary);">
+                {{ comp.evidence_sources|join(', ') or 'None recorded' }}
+              </td>
+              <td>
+                {% if comp.score_if_applicable %}
+                  <strong>{{ comp.score_if_applicable }}%</strong>
+                {% else %}
+                  <span style="color: var(--color-text-muted);">N/A</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 14px; font-size: 12px; color: var(--color-text-muted);">
+      <em>Rule of Evidence:</em> Skills marked "Not yet assessed" or "Claimed" reflect areas not directly queried in this specific question sequence. Not assessed is not a failure.
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Adaptive Interview Intelligence{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-container">
+      <a href="{{ url_for('main.index') }}" class="brand-link">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+        <span>Adaptive Interview Intelligence</span>
+      </a>
+
+      <nav class="nav-links">
+        {% if current_user.is_authenticated %}
+          {% if current_user.is_recruiter %}
+            <a href="{{ url_for('recruiter.dashboard') }}" class="nav-link">Recruiter Dashboard</a>
+          {% else %}
+            <a href="{{ url_for('main.dashboard') }}" class="nav-link">Dashboard</a>
+            <a href="{{ url_for('profile.candidate_profile') }}" class="nav-link">Candidate Profile</a>
+            <a href="{{ url_for('interview.setup') }}" class="nav-link">New Interview</a>
+          {% endif %}
+
+          <span class="user-badge">{{ current_user.full_name }} ({{ current_user.role|capitalize }})</span>
+          <form method="POST" action="{{ url_for('auth.logout') }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-secondary btn-sm">Log Out</button></form>
+        {% else %}
+          <a href="{{ url_for('main.index') }}" class="nav-link">About</a>
+          <a href="{{ url_for('auth.login') }}" class="nav-link">Log In</a>
+          <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Sign Up</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-container">
+      <p>Adaptive Interview Intelligence · Evidence-Grounded Full-Stack AI Interview Platform · Hackathon Problem 3</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

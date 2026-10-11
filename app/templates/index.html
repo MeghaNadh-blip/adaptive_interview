@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Adaptive Interview Intelligence — Evidence-Grounded AI Platform{% endblock %}
+
+{% block content %}
+<div class="card" style="text-align: center; padding: 48px 24px;">
+  <h1 style="font-size: 32px; font-weight: 700; margin-bottom: 12px; color: var(--color-text-primary);">
+    Adaptive Interview Intelligence
+  </h1>
+  <p style="font-size: 17px; color: var(--color-text-secondary); max-width: 720px; margin: 0 auto 28px;">
+    An evidence-grounded technical interview platform connecting resume claims, GitHub repositories, adaptive question planning, rubric-based evaluation, and transparent integrity telemetry.
+  </p>
+
+  <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary" style="padding: 10px 20px;">Create Candidate Account</a>
+    <a href="{{ url_for('auth.login') }}" class="btn btn-secondary" style="padding: 10px 20px;">Sign In</a>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 24px;">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Module 1 — Candidate Profile & Question Planning</div>
+      <div class="card-subtitle">Resume extraction & GitHub public API analysis</div>
+    </div>
+    <p style="font-size: 14px; color: var(--color-text-secondary);">
+      Extracts technical artifacts from uploaded PDF resumes and public GitHub repositories. Grounds role-specific questions directly in verified candidate projects rather than generic trivia.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Module 2 — Interview Room & 5-D Rubric Evaluation</div>
+      <div class="card-subtitle">Timed questions & multi-dimensional scoring</div>
+    </div>
+    <p style="font-size: 14px; color: var(--color-text-secondary);">
+      Evaluates answers using an explicit 5-dimension rubric (Technical Correctness, Depth, Reasoning, Relevance, Clarity). Identifies what was correct, incomplete aspects, and uncertainty levels.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Module 3 — Integrity Intelligence</div>
+      <div class="card-subtitle">Transparent browser telemetry</div>
+    </div>
+    <p style="font-size: 14px; color: var(--color-text-secondary);">
+      Logs visibility state changes and window blurs with neutral server timestamps. Never accuses candidates or terminates automatically; provides context for human recruiter review.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Module 4 — Resume-to-Interview Skill Gap Mapping</div>
+      <div class="card-subtitle">Claimed vs demonstrated competency matrix</div>
+    </div>
+    <p style="font-size: 14px; color: var(--color-text-secondary);">
+      Distinguishes claimed skills, repository evidence, and demonstrated interview answers. Enforces the first principle: <em>Not yet assessed is not the same as failed</em>.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Module 5 — Explainable Reports & Recruiter Decisions</div>
+      <div class="card-subtitle">Decision support without autonomous hiring</div>
+    </div>
+    <p style="font-size: 14px; color: var(--color-text-secondary);">
+      Generates structured candidate reports, personalized learning roadmaps, and audit trails. Human recruiters record decisions with attribution and rationale.
+    </p>
+  </div>
+</div>
+{% endblock %}

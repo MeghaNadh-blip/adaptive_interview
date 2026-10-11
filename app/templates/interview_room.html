@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Question {{ question_index }} of {{ total_questions }} — Interview Room{% endblock %}
+
+{% block content %}
+<!-- Hidden data container for vanilla JS interview runner -->
+<div id="interview-room-data"
+     data-session-id="{{ session._id }}"
+     data-question-id="{{ current_question._id }}"
+     data-time-limit="{{ current_question.time_limit_seconds }}"
+     data-csrf-token="{{ csrf_token() }}"
+     style="display: none;"></div>
+
+<div style="max-width: 860px; margin: 0 auto;">
+  <!-- Header Bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div>
+      <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-accent);">
+        Question {{ question_index }} of {{ total_questions }}
+      </span>
+      <h1 style="font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">
+        {{ session.target_role }}
+      </h1>
+    </div>
+
+    <!-- Countdown Timer -->
+    <div style="background: #ffffff; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 8px 16px; text-align: center; box-shadow: var(--shadow-sm);">
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted);">
+        Time Remaining
+      </div>
+      <div id="timer-display" style="font-size: 22px; font-weight: 700; font-family: monospace; color: var(--color-text-primary);">
+        --:--
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Card -->
+  <div class="card">
+    <div style="margin-bottom: 16px;">
+      <div class="meta-row" style="margin-bottom: 10px;">
+        <span>Competency: <strong>{{ current_question.competency }}</strong></span>
+        <span class="meta-sep">·</span>
+        <span>Difficulty: <strong>{{ current_question.difficulty|capitalize }}</strong></span>
+        <span class="meta-sep">·</span>
+        <span>Type: <strong>{{ current_question.question_type.replace('_', ' ')|capitalize }}</strong></span>
+      </div>
+
+      <h2 id="interview-question-text" style="font-size: 18px; font-weight: 600; line-height: 1.5; color: var(--color-text-primary);">
+        {{ current_question.question_text }}
+      </h2>
+      <div class="voice-question-controls" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; align-items:center;">
+        <button type="button" id="speak-question-btn" class="btn btn-secondary">🔊 Read question aloud</button>
+        <button type="button" id="stop-speech-btn" class="btn btn-secondary" disabled>⏹ Stop audio</button>
+        <span id="speech-playback-status" class="form-hint" role="status" aria-live="polite" style="margin:0;">Voice playback is ready.</span>
+      </div>
+    </div>
+
+    <!-- Evidence & Criteria Transparency -->
+    <div style="background-color: #f8fafc; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 20px; font-size: 13px;">
+      <div style="margin-bottom: 8px;">
+        <strong style="color: var(--color-text-secondary);">Evidence Reference:</strong>
+        <span style="color: var(--color-text-primary);">{{ current_question.evidence_reference }}</span>
+      </div>
+      <div>
+        <strong style="color: var(--color-text-secondary);">Assessment Focus:</strong>
+        <span style="color: var(--color-text-primary);">{{ current_question.relevance_reason }}</span>
+      </div>
+    </div>
+
+    <!-- Answer Submission Form -->
+    <form id="interview-answer-form" method="POST" action="{{ url_for('interview.submit_answer', session_id=session._id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="question_id" value="{{ current_question._id }}">
+      <input type="hidden" id="duration-seconds-input" name="duration_seconds" value="0">
+      <input type="hidden" id="is-timeout-input" name="is_timeout" value="false">
+
+      <div class="form-group">
+        <label class="form-label" for="answer-textarea">
+          Your Answer (Text)
+        </label>
+        <textarea id="answer-textarea" name="answer_text" class="form-control" rows="8"
+                  placeholder="Provide your structured explanation, architectural rationale, and trade-off considerations here..."
+                  style="font-family: inherit; line-height: 1.6;" required autofocus>{% if existing_answer %}{{ existing_answer.answer_text }}{% endif %}</textarea>
+        <div class="voice-answer-controls" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:12px;">
+          <button type="button" id="start-recording-btn" class="btn btn-secondary">🎙️ Answer by voice</button>
+          <button type="button" id="stop-recording-btn" class="btn btn-secondary" disabled>⏹ Stop recording</button>
+          <button type="button" id="clear-voice-btn" class="btn btn-secondary">Clear answer</button>
+        </div>
+        <p id="voice-recording-status" class="form-hint" role="status" aria-live="polite" style="margin-top:8px;">
+          Voice input uses your browser's speech recognition when supported. You can always type or edit your answer.
+        </p>
+        <p class="form-hint">
+          Draft answers are automatically saved locally. Review the transcript before submitting. Microphone access is requested by your browser; speech recognition availability and processing depend on your browser and settings.
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+        <span style="font-size: 12.5px; color: var(--color-text-muted);">
+          Integrity events (e.g. visibility changes) are logged transparently.
+        </span>
+
+        <button type="submit" id="submit-answer-btn" class="btn btn-primary" style="padding: 10px 24px; font-size: 14px;">
+          Submit Answer & Continue →
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/interview.js') }}"></script>
+{% endblock %}

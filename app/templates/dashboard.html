@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Candidate Dashboard — Adaptive Interview Intelligence{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1 style="font-size: 24px; font-weight: 700; color: var(--color-text-primary);">
+      Welcome, {{ current_user.full_name }}
+    </h1>
+    <p style="font-size: 14px; color: var(--color-text-secondary); margin-top: 4px;">
+      Manage your candidate evidence, interview readiness, and performance reports.
+    </p>
+  </div>
+
+  <div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('profile.candidate_profile') }}" class="btn btn-secondary">
+      Edit Profile & Resume
+    </a>
+    {% if completion.is_ready_for_interview %}
+      <a href="{{ url_for('interview.setup') }}" class="btn btn-primary">
+        Start New Interview
+      </a>
+    {% else %}
+      <button class="btn btn-primary" disabled title="Complete your profile first">
+        Start New Interview (Profile Incomplete)
+      </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Profile Readiness Card -->
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <div class="card-title">Profile Completion & Readiness</div>
+      <div class="card-subtitle">Prerequisites for grounded, role-specific question generation</div>
+    </div>
+    <div style="font-size: 18px; font-weight: 700; color: var(--color-accent);">
+      {{ completion.percentage }}%
+    </div>
+  </div>
+
+  <div class="progress-container" style="margin-bottom: 18px;">
+    <div class="progress-bar" style="width: {{ completion.percentage }}%;"></div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; font-size: 13.5px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      {% if completion.has_resume %}
+        <span style="color: var(--color-success); font-weight: bold;">✓</span>
+        <span>Resume PDF Uploaded & Extracted</span>
+      {% else %}
+        <span style="color: var(--color-danger); font-weight: bold;">✕</span>
+        <span style="color: var(--color-text-muted);">Resume PDF Missing (<a href="{{ url_for('profile.candidate_profile') }}">Upload</a>)</span>
+      {% endif %}
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px;">
+      {% if completion.has_github %}
+        <span style="color: var(--color-success); font-weight: bold;">✓</span>
+        <span>GitHub Profile Connected</span>
+      {% else %}
+        <span style="color: var(--color-danger); font-weight: bold;">✕</span>
+        <span style="color: var(--color-text-muted);">GitHub URL Missing (<a href="{{ url_for('profile.candidate_profile') }}">Add</a>)</span>
+      {% endif %}
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px;">
+      {% if completion.has_role %}
+        <span style="color: var(--color-success); font-weight: bold;">✓</span>
+        <span>Target Role Configured ({{ profile.target_role }})</span>
+      {% else %}
+        <span style="color: var(--color-danger); font-weight: bold;">✕</span>
+        <span style="color: var(--color-text-muted);">Target Role Not Set (<a href="{{ url_for('profile.candidate_profile') }}">Set</a>)</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Interview Sessions History -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Interview History & Explainable Reports</div>
+    <div class="card-subtitle">Persistent session tracking and skill gap diagnostics</div>
+  </div>
+
+  {% if sessions %}
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Target Role</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in sessions %}
+            {% set s = item.session %}
+            {% set rep = item.report %}
+            <tr>
+              <td>
+                <strong>{{ s.target_role }}</strong>
+                <div style="font-size: 12px; color: var(--color-text-muted);">
+                  {{ s.configuration.total_questions }} Questions · {{ s.configuration.time_limit_per_question }}s limit
+                </div>
+              </td>
+              <td>
+                {% if s.status == 'completed' %}
+                  <span style="color: var(--color-success); font-weight: 500;">Completed</span>
+                {% elif s.status == 'in_progress' %}
+                  <span style="color: var(--color-accent); font-weight: 500;">In Progress (Q{{ s.current_question_index + 1 }})</span>
+                {% else %}
+                  <span style="color: var(--color-text-muted);">Configured</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if rep %}
+                  <span style="font-weight: 600; font-size: 15px;">{{ rep.score_summary.overall_score if rep.score_summary.overall_score is not none else "Unavailable" }}</span>{% if rep.score_summary.overall_score is not none %} / 100{% endif %}
+                {% else %}
+                  <span style="color: var(--color-text-muted);">Pending</span>
+                {% endif %}
+              </td>
+              <td style="font-size: 12.5px; color: var(--color-text-secondary);">
+                {{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else 'Recent' }}
+              </td>
+              <td>
+                {% if s.status == 'completed' %}
+                  <a href="{{ url_for('reports.detail', session_id=s._id) }}" class="btn btn-secondary btn-sm">
+                    View Report
+                  </a>
+                {% elif s.status == 'in_progress' %}
+                  <a href="{{ url_for('interview.room', session_id=s._id) }}" class="btn btn-primary btn-sm">
+                    Resume Interview
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 32px 16px; color: var(--color-text-muted);">
+      <p style="margin-bottom: 12px;">No interview sessions recorded yet.</p>
+      {% if completion.is_ready_for_interview %}
+        <a href="{{ url_for('interview.setup') }}" class="btn btn-primary">Start Your First Interview</a>
+      {% else %}
+        <a href="{{ url_for('profile.candidate_profile') }}" class="btn btn-secondary">Complete Profile to Begin</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

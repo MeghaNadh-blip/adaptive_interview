@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Recruiter Dashboard — Decision Support Workspace{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+  <div>
+    <h1 style="font-size: 24px; font-weight: 700; color: var(--color-text-primary);">
+      Recruiter Decision Support Workspace
+    </h1>
+    <p style="font-size: 14px; color: var(--color-text-secondary); margin-top: 4px;">
+      Inspect candidate evidence, rubric assessments, and integrity events to record human review decisions.
+    </p>
+  </div>
+</div>
+
+<!-- Aggregate Metrics Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+  <div class="card" style="margin-bottom: 0;">
+    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">
+      Registered Candidates
+    </div>
+    <div style="font-size: 28px; font-weight: 700; color: var(--color-text-primary); margin-top: 4px;">
+      {{ total_candidates }}
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 0;">
+    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">
+      Total Interview Sessions
+    </div>
+    <div style="font-size: 28px; font-weight: 700; color: var(--color-accent); margin-top: 4px;">
+      {{ total_interviews }}
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 0;">
+    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">
+      Completed Evaluations
+    </div>
+    <div style="font-size: 28px; font-weight: 700; color: var(--color-success); margin-top: 4px;">
+      {{ completed_interviews }}
+    </div>
+  </div>
+</div>
+
+<!-- Candidate Sessions Table -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Candidate Evaluations & Reviews</div>
+    <div class="card-subtitle">Review question evidence, assessment uncertainty, and record human decisions</div>
+  </div>
+
+  {% if session_cards %}
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Candidate & Role</th>
+            <th>Score</th>
+            <th>Integrity Events</th>
+            <th>Human Review Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in session_cards %}
+            {% set s = item.session %}
+            {% set cand = item.candidate %}
+            {% set rep = item.report %}
+            {% set rev = item.latest_review %}
+            <tr>
+              <td>
+                <strong>{{ cand.full_name or s.candidate_name }}</strong>
+                <div style="font-size: 12px; color: var(--color-text-muted);">
+                  {{ s.target_role }} · {{ cand.email }}
+                </div>
+              </td>
+              <td>
+                {% if rep %}
+                  <span style="font-size: 16px; font-weight: 700; color: var(--color-accent);">
+                    {{ rep.score_summary.overall_score if rep.score_summary.overall_score is not none else "Unavailable" }}
+                  </span>
+                  {% if rep.score_summary.overall_score is not none %}<span style="font-size: 12px; color: var(--color-text-muted);">/ 100</span>{% endif %}
+                {% else %}
+                  <span style="color: var(--color-text-muted); font-size: 13px;">In Progress</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if item.integrity_count > 0 %}
+                  <span style="color: var(--color-warning); font-size: 13px; font-weight: 500;">
+                    {{ item.integrity_count }} event{{ 's' if item.integrity_count > 1 }} recorded
+                  </span>
+                {% else %}
+                  <span style="color: var(--color-success); font-size: 13px;">None</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if rev %}
+                  <span style="font-size: 12.5px; font-weight: 600; color: var(--color-text-primary);">
+                    {{ rev.review_status }}
+                  </span>
+                  <div style="font-size: 11px; color: var(--color-text-muted);">
+                    by {{ rev.recruiter_name }}
+                  </div>
+                {% else %}
+                  <span style="color: var(--color-text-muted); font-size: 12.5px;">Pending Human Review</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if s.status == 'completed' %}
+                  <a href="{{ url_for('reports.detail', session_id=s._id) }}" class="btn btn-secondary btn-sm">
+                    Review Evidence & Decide →
+                  </a>
+                {% else %}
+                  <span style="font-size: 12px; color: var(--color-text-muted);">Session active</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p style="text-align: center; padding: 24px; color: var(--color-text-muted); font-size: 14px;">
+      No candidate sessions found in database.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

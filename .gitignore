@@ -1,0 +1,25 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Private data and generated artifacts
+instance/
+uploads/
+private_resumes/
+*.pdf
+*.log
+
+# Editors and OS
+.DS_Store
+.vscode/
+.idea/
