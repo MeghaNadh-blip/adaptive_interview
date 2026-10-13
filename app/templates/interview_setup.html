@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Configure Interview — Adaptive Interview Intelligence{% endblock %}
+
+{% block content %}
+<div style="max-width: 720px; margin: 0 auto;">
+  <div class="card">
+    <div class="card-header">
+      <h1 class="card-title">Configure Adaptive Interview</h1>
+      <p class="card-subtitle">Generate a role-specific interview sequence grounded in your evidence</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('interview.setup') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label" for="target_role">Target Job Role</label>
+        <input type="text" id="target_role" name="target_role" class="form-control"
+               value="{{ profile.target_role or 'Senior Python Backend Developer' }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="job_description">Job Description / Requirements (Optional)</label>
+        <textarea id="job_description" name="job_description" class="form-control" rows="3"
+                  placeholder="Paste job description or leave blank to use standard industry competency benchmarks."></textarea>
+        <p class="form-hint">Questions will be aligned with the requirements specified here.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="competencies">Target Competencies (Comma-separated)</label>
+        <input type="text" id="competencies" name="competencies" class="form-control"
+               value="Python Concurrency, Database Indexing, Distributed Systems, Testing & Code Quality, API Security">
+        <p class="form-hint">Key technical capabilities to assess during this session.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label" for="difficulty">Question Difficulty</label>
+          <select id="difficulty" name="difficulty" class="form-control">
+            <option value="adaptive" selected>Adaptive (Recommended)</option>
+            <option value="easy">Easy Baseline</option>
+            <option value="medium">Medium Standard</option>
+            <option value="hard">Hard Senior</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="question_count">Question Count</label>
+          <select id="question_count" name="question_count" class="form-control">
+            <option value="3">3 Questions (Quick Test)</option>
+            <option value="5" selected>5 Questions (Standard)</option>
+            <option value="10">10 Questions (Comprehensive)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="time_limit">Time Limit Per Question</label>
+          <select id="time_limit" name="time_limit" class="form-control">
+            <option value="60">60 seconds</option>
+            <option value="120" selected>120 seconds (Standard)</option>
+            <option value="180">180 seconds</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Transparent Integrity Monitoring Notice -->
+      <div style="background-color: #f8fafc; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 16px; margin: 20px 0;">
+        <strong style="font-size: 13.5px; color: var(--color-text-primary); display: block; margin-bottom: 6px;">
+          Transparent Integrity Protocol Disclosure:
+        </strong>
+        <p style="font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.5;">
+          During the interview, standard browser visibility state changes (e.g., minimizing or switching windows) are logged with neutral server timestamps for recruiter context. Browser events are signals, never automatic proof of wrongdoing, and the system will never terminate your interview automatically.
+        </p>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 15px;">
+        Begin Adaptive Interview Session
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

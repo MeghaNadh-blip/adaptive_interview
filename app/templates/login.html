@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Log In — Adaptive Interview Intelligence{% endblock %}
+
+{% block content %}
+<div style="max-width: 440px; margin: 40px auto;">
+  <div class="card">
+    <div class="card-header">
+      <h1 class="card-title">Sign In</h1>
+      <p class="card-subtitle">Access your interview dashboard or recruiter workspace</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input type="email" id="email" name="email" class="form-control" placeholder="name@example.com" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+        Sign In
+      </button>
+    </form>
+
+    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-border); text-align: center; font-size: 13.5px;">
+      <p style="margin-top: 14px; color: var(--color-text-muted);">
+        Don't have an account? <a href="{{ url_for('auth.register') }}">Create one here</a>.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Explainable Report — {{ report.candidate_name }} ({{ session.target_role }}){% endblock %}
+
+{% block content %}
+<div style="max-width: 1040px; margin: 0 auto;">
+  <!-- Header Actions -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <span style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-accent);">
+        Comprehensive Explainable Report
+      </span>
+      <h1 style="font-size: 26px; font-weight: 700; color: var(--color-text-primary); margin-top: 2px;">
+        {{ report.candidate_name }} · {{ report.target_role }}
+      </h1>
+      <div class="meta-row" style="margin-top: 6px;">
+        <span>Session ID: {{ session._id }}</span>
+        <span class="meta-sep">·</span>
+        <span>Rubric Version: {{ session.rubric_version }}</span>
+        <span class="meta-sep">·</span>
+        <span>Evaluated: {{ report.created_at.strftime('%Y-%m-%d %H:%M UTC') if report.created_at else 'Recent' }}</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <a href="{{ url_for('reports.export_pdf', session_id=session._id) }}" class="btn btn-primary">
+        Download PDF Report
+      </a>
+      <button onclick="window.print()" class="btn btn-secondary no-print">
+        Print Report
+      </button>
+    </div>
+  </div>
+
+  {% if retryable_evaluations|default(report.score_summary.evaluations_unavailable|default(0)) > 0 %}
+    <div class="card no-print" style="margin-bottom: 16px;">
+      <strong>{{ retryable_evaluations }} saved answer evaluation(s) need attention.</strong>
+      <p style="margin: 8px 0 12px;">Check your configured AI provider, then retry saved answers without taking the interview again. Missing or older evaluation records are included too.</p>
+      <form method="POST" action="{{ url_for('reports.retry_evaluations', session_id=session._id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary">Retry Unavailable Evaluations</button>
+      </form>
+    </div>
+  {% endif %}
+
+  <!-- Overall Scores Card -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted);">
+          Overall Weighted Rubric Score
+        </div>
+        <div style="font-size: 36px; font-weight: 800; color: var(--color-accent); margin: 2px 0;">
+          {{ report.score_summary.overall_score if report.score_summary.overall_score is not none else "Unavailable" }}{% if report.score_summary.overall_score is not none %} / 100{% endif %}
+        </div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">
+          Based on {{ report.score_summary.evaluations_available|default(0) }} completed evaluations from {{ report.score_summary.questions_answered }} submitted answers across 5 rubric dimensions.
+          {% if report.score_summary.score_is_provisional|default(false) %}<strong style="display:block; color:var(--color-warning); margin-top:4px;">Provisional score: one or more evaluations need retry or human review.</strong>{% endif %}
+        </div>
+      </div>
+
+      <div class="score-pill-row" style="flex: 1; max-width: 600px; margin-top: 0;">
+        <div class="score-box">
+          <div class="score-box-num">{{ report.score_summary.technical_mastery if report.score_summary.technical_mastery is not none else "N/A" }}{% if report.score_summary.technical_mastery is not none %}/5{% endif %}</div>
+          <div class="score-box-label">Technical</div>
+        </div>
+        <div class="score-box">
+          <div class="score-box-num">{{ report.score_summary.depth_score if report.score_summary.depth_score is not none else "N/A" }}{% if report.score_summary.depth_score is not none %}/5{% endif %}</div>
+          <div class="score-box-label">Depth</div>
+        </div>
+        <div class="score-box">
+          <div class="score-box-num">{{ report.score_summary.problem_solving if report.score_summary.problem_solving is not none else "N/A" }}{% if report.score_summary.problem_solving is not none %}/5{% endif %}</div>
+          <div class="score-box-label">Reasoning</div>
+        </div>
+        <div class="score-box">
+          <div class="score-box-num">{{ report.score_summary.relevance if report.score_summary.relevance is defined and report.score_summary.relevance is not none else "N/A" }}{% if report.score_summary.relevance is defined and report.score_summary.relevance is not none %}/5{% endif %}</div>
+          <div class="score-box-label">Relevance</div>
+        </div>
+        <div class="score-box">
+          <div class="score-box-num">{{ report.score_summary.communication if report.score_summary.communication is not none else "N/A" }}{% if report.score_summary.communication is not none %}/5{% endif %}</div>
+          <div class="score-box-label">Clarity</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recruiter Human Review Section (If user is Recruiter) -->
+  {% if current_user.is_recruiter %}
+    <div class="card" style="border-left: 4px solid var(--color-accent);">
+      <div class="card-header">
+        <div class="card-title">Recruiter Human Decision & Review</div>
+        <div class="card-subtitle">AI outputs serve as decision support; consequential hiring decisions are made by humans.</div>
+      </div>
+
+      {% if recruiter_reviews %}
+        <div style="margin-bottom: 20px;">
+          <strong style="font-size: 13px; color: var(--color-text-secondary); display: block; margin-bottom: 8px;">
+            Past Recorded Human Decisions:
+          </strong>
+          {% for rev in recruiter_reviews %}
+            <div style="background: #f8fafc; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 12px; margin-bottom: 8px; font-size: 13px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <strong>{{ rev.review_status }}</strong>
+                <span style="color: var(--color-text-muted);">by {{ rev.recruiter_name }} on {{ rev.reviewed_at.strftime('%Y-%m-%d %H:%M') if rev.reviewed_at else 'Recent' }}</span>
+              </div>
+              <p style="color: var(--color-text-primary);">{{ rev.decision_notes or 'No additional notes provided.' }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('recruiter.record_decision', session_id=session._id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="review_status">Decision Status</label>
+            <select id="review_status" name="review_status" class="form-control" required>
+              <option value="Further interview recommended">Further interview recommended</option>
+              <option value="Additional evidence required">Additional evidence required</option>
+              <option value="Human review completed">Human review completed</option>
+              <option value="Decision recorded by recruiter">Decision recorded by recruiter</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="decision_notes">Reviewer Rationale & Notes</label>
+            <input type="text" id="decision_notes" name="decision_notes" class="form-control"
+                   placeholder="e.g. Strong system design instincts confirmed; suggest advancing to team discussion." required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm">
+          Save Recruiter Decision
+        </button>
+      </form>
+    </div>
+  {% endif %}
+
+  <!-- Question-by-Question Audit Trail -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Question-Level Audit Trail & Evidence</div>
+      <div class="card-subtitle">Transparent breakdown of each question, answer, and 5-dimension rubric score</div>
+    </div>
+
+    {% for item in qa_details %}
+      {% set q = item.question %}
+      {% set a = item.answer %}
+      {% set e = item.evaluation %}
+      <div style="padding: 18px 0; border-bottom: 1px solid var(--color-border);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div>
+            <span style="font-size: 12px; font-weight: 700; color: var(--color-accent); text-transform: uppercase;">
+              Q{{ q.sequence_number }} · {{ q.competency }}
+            </span>
+            <h3 style="font-size: 16px; font-weight: 600; margin-top: 4px; color: var(--color-text-primary);">
+              {{ q.question_text }}
+            </h3>
+          </div>
+          {% if e %}
+            <div style="text-align: right; min-width: 100px;">
+              <div style="font-size: 18px; font-weight: 700; color: var(--color-accent);">
+                {{ e.weighted_score if e.weighted_score is not none else "Unavailable — human review needed" }}{% if e.weighted_score is not none %} / 100{% endif %}
+              </div>
+              <div style="font-size: 11px; color: var(--color-text-muted);">
+                Uncertainty: {{ e.uncertainty|capitalize }}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Candidate Answer -->
+        <div style="background: #f8fafc; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 12px; margin: 10px 0; font-size: 13.5px; line-height: 1.6;">
+          <strong style="font-size: 12px; text-transform: uppercase; color: var(--color-text-muted); display: block; margin-bottom: 4px;">
+            Candidate Answer ({{ a.duration_seconds if a else '0' }}s duration):
+          </strong>
+          <p style="white-space: pre-wrap; color: var(--color-text-primary);">{{ a.answer_text if a else 'No response recorded.' }}</p>
+        </div>
+
+        <!-- Evaluation Evidence -->
+        {% if e %}
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 13px; margin-top: 10px;">
+            <div>
+              <strong style="color: var(--color-success);">✓ What Was Correct:</strong>
+              <ul style="padding-left: 18px; margin-top: 4px; color: var(--color-text-secondary);">
+                {% for c in e.evidence.what_was_correct %}
+                  <li>{{ c }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div>
+              <strong style="color: var(--color-warning);">⚠ Incomplete / Nuances Missed:</strong>
+              <ul style="padding-left: 18px; margin-top: 4px; color: var(--color-text-secondary);">
+                {% for inc in e.evidence.what_was_incomplete_or_incorrect %}
+                  <li>{{ inc }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+          <div style="margin-top: 10px; font-size: 12.5px; color: var(--color-text-muted);">
+            <strong>Constructive Improvement:</strong> {{ e.evidence.suggested_improvement }}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Transparent Integrity Telemetry -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Interview Integrity Log</div>
+      <div class="card-subtitle">Transparent, non-accusatory record of browser visibility telemetry</div>
+    </div>
+
+    {% if integrity_events %}
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Event Type</th>
+              <th>Context</th>
+              <th>Review Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ev in integrity_events %}
+              <tr>
+                <td style="font-size: 12px; color: var(--color-text-muted);">
+                  {{ ev.recorded_at.strftime('%H:%M:%S UTC') if ev.recorded_at else 'Recorded' }}
+                </td>
+                <td>
+                  <strong>{{ ev.event_type.replace('_', ' ')|capitalize }}</strong>
+                </td>
+                <td style="font-size: 13px; color: var(--color-text-secondary);">
+                  {{ ev.context }}
+                </td>
+                <td>
+                  <span style="font-size: 12px; color: var(--color-text-muted);">
+                    {{ ev.review_status|capitalize }}
+                  </span>
+                  {% if ev.reviewer_notes %}
+                    <div style="font-size: 11.5px; color: var(--color-text-primary); margin-top: 2px;">
+                      <em>Note:</em> {{ ev.reviewer_notes }}
+                    </div>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="font-size: 13.5px; color: var(--color-text-muted);">
+        No visibility changes or browser interruption events recorded during this session.
+      </p>
+    {% endif %}
+  </div>
+
+  <!-- Actionable Learning Roadmap -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Personalized Learning Roadmap & Practice Questions</div>
+      <div class="card-subtitle">Targeted technical development plan grounded in interview performance</div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <strong style="font-size: 13px; color: var(--color-text-secondary); display: block; margin-bottom: 8px;">
+        Actionable Recommendations:
+      </strong>
+      {% for rec in report.learning_recommendations %}
+        <div style="padding: 10px 14px; background: #f8fafc; border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: 8px; font-size: 13px;">
+          <div style="display: flex; justify-content: space-between;">
+            <strong>{{ rec.skill }}</strong>
+            <span style="font-size: 11px; text-transform: uppercase; color: var(--color-text-muted);">Priority: {{ rec.priority|capitalize }}</span>
+          </div>
+          <p style="color: var(--color-text-secondary); margin-top: 4px;">{{ rec.action_item }}</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div>
+      <strong style="font-size: 13px; color: var(--color-text-secondary); display: block; margin-bottom: 8px;">
+        Recommended Practice Scenarios:
+      </strong>
+      <ul style="padding-left: 20px; font-size: 13px; color: var(--color-text-secondary);">
+        {% for pq in report.recommended_practice_questions %}
+          <li style="margin-bottom: 6px;">{{ pq }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Limitations & Uncertainty -->
+  <div class="card" style="background-color: #fafafa;">
+    <div class="card-header">
+      <div class="card-title" style="font-size: 16px;">Assessment Limitations & Methodological Disclosure</div>
+    </div>
+    <ul style="padding-left: 20px; font-size: 12.5px; color: var(--color-text-muted); line-height: 1.6;">
+      {% for lim in report.limitations %}
+        <li>{{ lim }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

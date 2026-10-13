@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}About — How Mock Interview Works{% endblock %}
+{% block content %}
+<section class="about-hero"><span class="eyebrow">HOW IT WORKS</span><h1>From your profile to a stronger interview</h1><p>Five connected modules guide the practice session, explain feedback, and help you identify what to work on next.</p></section>
+<div class="module-list">
+  <article class="module-card"><div class="module-number">01</div><div><h2>Candidate Profile &amp; Question Planning</h2><p>Upload your resume and connect public GitHub project evidence. The system uses relevant information to plan role-specific questions instead of relying only on generic trivia.</p><span class="module-tag">Profile · Resume · Projects</span></div></article>
+  <article class="module-card"><div class="module-number">02</div><div><h2>Interview Room &amp; Answer Evaluation</h2><p>Answer timed questions and receive structured feedback across technical correctness, depth, reasoning, relevance, and clarity. Answer validation helps catch empty, too-short, or repeated responses.</p><span class="module-tag">Practice · Validate · Evaluate</span></div></article>
+  <article class="module-card"><div class="module-number">03</div><div><h2>Integrity Intelligence</h2><p>Transparent browser-event logging can provide context for human review. A browser event alone is not proof of misconduct and does not automatically disqualify a candidate.</p><span class="module-tag">Transparent · Contextual</span></div></article>
+  <article class="module-card"><div class="module-number">04</div><div><h2>Resume-to-Interview Skill Mapping</h2><p>Compare skills claimed on a resume, available project evidence, and skills demonstrated in answers. Missing evidence is marked as not yet assessed—not automatically treated as failure.</p><span class="module-tag">Claimed skills · Evidence · Demonstration</span></div></article>
+  <article class="module-card"><div class="module-number">05</div><div><h2>Explainable Reports &amp; Improvement Plan</h2><p>Review evidence-backed feedback, skill gaps, and recommended learning steps. Reports support people making decisions; they do not make autonomous hiring decisions.</p><span class="module-tag">Reports · Learning · Human review</span></div></article>
+</div>
+<div class="about-cta"><div><h2>Ready to practice?</h2><p>Start with your profile and work through a personalized mock interview.</p></div><a href="{{ url_for('auth.register') }}" class="btn btn-primary">Start Mock Interview →</a></div>
+{% endblock %}

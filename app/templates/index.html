@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Mock Interview — Practice Real Interviews with AI{% endblock %}
+{% block content %}
+<section class="hero-section">
+  <div class="hero-copy">
+    <span class="eyebrow"><span class="eyebrow-dot"></span> AI-powered interview practice</span>
+    <h1>Practice real interviews.<br><span>Build real confidence.</span></h1>
+    <p>Prepare with questions tailored to your resume and projects. Practice at your pace and get clear, evidence-based feedback to help you improve.</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary hero-cta">Start Mock Interview <span aria-hidden="true">→</span></a>
+      <a href="{{ url_for('main.about') }}" class="btn btn-secondary hero-secondary">How it works</a>
+    </div>
+    <div class="hero-points"><span>✓ Resume-based questions</span><span>✓ Helpful answer feedback</span></div>
+  </div>
+  <div class="hero-art-wrap"><img class="hero-art" src="{{ url_for('static', filename='images/mock-interview.png') }}" alt="Illustration of a candidate practicing an interview with a panel" loading="eager"></div>
+</section>
+<section class="home-trust-row" aria-label="Platform highlights">
+  <div><span class="trust-icon">01</span><span><strong>Personalized practice</strong><small>Questions shaped by your profile</small></span></div>
+  <div><span class="trust-icon">02</span><span><strong>Actionable feedback</strong><small>Understand what to improve</small></span></div>
+  <div><span class="trust-icon">03</span><span><strong>Your progress, explained</strong><small>Clear evidence and next steps</small></span></div>
+</section>
+{% endblock %}

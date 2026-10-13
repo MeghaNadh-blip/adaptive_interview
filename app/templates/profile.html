@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Candidate Profile — Adaptive Interview Intelligence{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+  <div>
+    <h1 style="font-size: 24px; font-weight: 700; color: var(--color-text-primary);">
+      Candidate Evidence & Profile
+    </h1>
+    <p style="font-size: 14px; color: var(--color-text-secondary); margin-top: 4px;">
+      Connect your resume and GitHub artifacts to ground your adaptive interview.
+    </p>
+  </div>
+
+  <div style="font-size: 14px; color: var(--color-text-secondary);">
+    Completion: <strong>{{ completion.percentage }}%</strong>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+  <!-- Left Column: Form -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Profile Configuration</div>
+        <div class="card-subtitle">Mandatory evidence and role targets</div>
+      </div>
+
+      <form method="POST" action="{{ url_for('profile.candidate_profile') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+          <label class="form-label" for="github_url">
+            GitHub Profile URL <span style="color: var(--color-danger);">*</span>
+          </label>
+          <input type="url" id="github_url" name="github_url" class="form-control"
+                 placeholder="https://github.com/username"
+                 value="{{ profile.github_url or '' }}" required>
+          <p class="form-hint">Mandatory. Used to inspect public repositories, technologies, and code artifacts.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="resume_pdf">
+            Resume Document (PDF) <span style="color: var(--color-danger);">*</span>
+          </label>
+          {% if profile.resume_original_name %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f1f5f9; border-radius: var(--radius-md); margin-bottom: 8px; font-size: 13px;">
+              <span><strong>Current File:</strong> {{ profile.resume_original_name }}</span>
+              <button type="submit" formaction="{{ url_for('profile.delete_resume') }}" class="btn btn-secondary btn-sm" style="color: var(--color-danger);">
+                Remove File
+              </button>
+            </div>
+          {% endif %}
+          <input type="file" id="resume_pdf" name="resume_pdf" class="form-control" accept=".pdf">
+          <p class="form-hint">Accepted format: Genuine PDF up to 5MB. Files are stored in private server storage.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="linkedin_url">LinkedIn Profile URL (Optional)</label>
+          <input type="url" id="linkedin_url" name="linkedin_url" class="form-control"
+                 placeholder="https://linkedin.com/in/username"
+                 value="{{ profile.linkedin_url or '' }}">
+          <p class="form-hint">Optional context. Used for manual verification if provided.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="target_role">
+            Target Job Role <span style="color: var(--color-danger);">*</span>
+          </label>
+          <input type="text" id="target_role" name="target_role" class="form-control"
+                 placeholder="e.g. Senior Python Backend Developer"
+                 value="{{ profile.target_role or '' }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="experience_level">Experience Level</label>
+          <select id="experience_level" name="experience_level" class="form-control">
+            <option value="Junior (0-2 Years)" {% if profile.experience_level == 'Junior (0-2 Years)' %}selected{% endif %}>Junior (0-2 Years)</option>
+            <option value="Mid-Level (2-4 Years)" {% if profile.experience_level == 'Mid-Level (2-4 Years)' or not profile.experience_level %}selected{% endif %}>Mid-Level (2-4 Years)</option>
+            <option value="Mid-Senior (3-5 Years)" {% if profile.experience_level == 'Mid-Senior (3-5 Years)' %}selected{% endif %}>Mid-Senior (3-5 Years)</option>
+            <option value="Senior (5+ Years)" {% if profile.experience_level == 'Senior (5+ Years)' %}selected{% endif %}>Senior (5+ Years)</option>
+            <option value="Lead / Staff" {% if profile.experience_level == 'Lead / Staff' %}selected{% endif %}>Lead / Staff</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+          Save Profile & Extract Evidence
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Right Column: Extracted Evidence Preview -->
+  <div>
+    <!-- Resume Evidence -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Extracted Resume Evidence</div>
+        <div class="card-subtitle">Claims extracted from your private PDF; claims are not independently verified</div>
+      </div>
+
+      {% if profile.resume_original_name or profile.resume_text %}
+        <p style="font-size: 13.5px; color: var(--color-text-secondary); margin-bottom: 12px;">
+          <strong>Resume uploaded:</strong> {{ profile.resume_original_name or 'PDF resume' }}
+        </p>
+
+        {% if resume_evidence and resume_evidence.source_summary %}
+          <p style="font-size: 13.5px; color: var(--color-text-secondary); margin-bottom: 12px;">
+            {{ resume_evidence.source_summary }}
+          </p>
+        {% endif %}
+
+        {% if resume_evidence and resume_evidence.extracted_skills %}
+          <div style="margin-bottom: 14px;">
+            <strong style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted);">
+              Extracted Skills (Resume Claims):
+            </strong>
+            <div style="font-size: 13.5px; margin-top: 6px; line-height: 1.8;">
+              {% for skill in resume_evidence.extracted_skills %}
+                <span style="display: inline-block; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; margin-right: 6px; margin-bottom: 6px;">{{ skill }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        {% elif resume_evidence and resume_evidence.retrieval_status == 'unavailable' %}
+          <p style="color: var(--color-text-muted); font-size: 13.5px;">
+            The PDF was uploaded and its text was saved, but AI evidence extraction is currently unavailable. Check your Gemini/Groq API configuration and upload the PDF again to retry extraction.
+          </p>
+        {% else %}
+          <p style="color: var(--color-text-muted); font-size: 13.5px;">
+            The PDF is uploaded, but no structured skills were extracted yet. The system will not invent resume claims.
+          </p>
+        {% endif %}
+
+        {% if resume_evidence and resume_evidence.evidence_references %}
+          <div style="margin-top: 12px;">
+            <strong style="font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted);">
+              Resume Project / Experience References:
+            </strong>
+            <ul style="margin-top: 6px; padding-left: 20px; font-size: 13px; color: var(--color-text-secondary);">
+              {% for ref in resume_evidence.evidence_references %}
+                <li style="margin-bottom: 6px;">
+                  <strong>{{ ref.item }}:</strong> {{ ref.details }}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      {% else %}
+        <p style="color: var(--color-text-muted); font-size: 13.5px;">
+          No resume uploaded yet. Upload a PDF resume to extract structured evidence.
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- GitHub Evidence -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Public GitHub Artifacts</div>
+        <div class="card-subtitle">Evidence retrieved via GitHub REST API</div>
+      </div>
+
+      {% if github_evidence and github_evidence.evidence_references %}
+        <p style="font-size: 13.5px; color: var(--color-text-secondary); margin-bottom: 12px;">
+          {{ github_evidence.source_summary }}
+        </p>
+
+        <ul style="padding-left: 20px; font-size: 13px; color: var(--color-text-secondary);">
+          {% for ref in github_evidence.evidence_references %}
+            <li style="margin-bottom: 6px;">
+              <strong>{{ ref.item }}:</strong> {{ ref.details }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="color: var(--color-text-muted); font-size: 13.5px;">
+          Enter your GitHub profile URL and click save to fetch public repository evidence.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
